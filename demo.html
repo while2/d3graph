@@ -1,0 +1,42 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1,user-scalable=0" />
+    <title>d3graph</title>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="d3graph.js" type="text/javascript"></script>
+    <script>
+    function demo() {
+      let width = 800;
+      let height = 600;
+      var graph = d3graph('main', width, height,
+        function(group, data) {
+          let size = 5;
+          group.append('circle').attr('r', 5).attr('stroke','#AAA').attr('fill', '#FFF');
+          group.append('text').text(data);
+        },
+        function(path, group) {
+          path.attr('stroke','#000')
+          group.append('text').text('hel');
+        }
+      );
+
+      graph.add_node(1, 'one');
+      graph.add_node(2, 'two');
+      graph.add_edge(1, 2);
+      graph.add_node(3, 'three');
+      graph.add_edge(2, 3);
+      graph.add_node(4, 'four');
+      graph.add_edge(2, 4);
+
+      graph.redraw([1]);
+    }
+    </script>
+</head>
+
+
+<body onload='demo()'>
+    <div id="main"></div>
+</body>
+</html>
