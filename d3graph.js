@@ -1,157 +1,175 @@
-function d3graph (div_id, width, height, draw_node, draw_edge, animation) {
-  let node_map = {};
-  let edge_map = {};
-  let svg = d3.select('#' + div_id)
-  .append('svg')
+function d3graph (div, width, height, drawNode, drawEdge) {
+  let svg = div.append('svg')
   .attr('width', width).attr('height', height);
 
-  function add_node(node_id, data) {
-    if (node_map[node_id] !== undefined) throw 'Node ' + node_id + ' already exists';
-    node_map[node_id] = {data: data, src: [], dst: []};
+  let nodes = {};
+  let edges = {};
+
+  function addNode(id, data) {
+    if (nodes[id] !== undefined) throw 'Node ' + id + ' already exists';
+    nodes[id] = data;
   }
-  function get_node(id) {
-    let node = node_map[id];
+  function getNode(id) {
+    let node = nodes[id];
     if (node == undefined) throw 'Node ' + id + ' does not exist';
     return node;
   }
-  function del_node(node_id) {
-    let node = get_node(node_id);
-    node.src.forEach(function (id) {
-      del_edge(id, node_id);
-    });
-    node.dst.forEach(function (id) {
-      del_edge(node_id, id);
-    })
-    node_map[node_id] = undefined;
+  function delNode(nodeId) {
+    node_map[nodeId] = undefined;
   }
-  function add_edge(src_id, dst_id, data) {
-    get_node(src_id).dst.push(dst_id);
-    get_node(dst_id).src.push(src_id);
-    edge_map[src_id + '-' + dst_id] = data;
+  function addEdge(edgeId, srcId, dstId, data) {
+    edges[edgeId] = {srcId: srcId, dstId: dstId, data: data};
   }
-  function del_edge(src_id, dst_id) {
-    let src = get_node(src_id);
-    let dst = get_node(dst_id);
-    src.dst = src.dst.filter(function (id) {
-      return id != dst_id;
-    });
-    dst.src = dst.src.filter(function (id) {
-      return id != src_id;
-    });
-    edge_map[src_id + '-' + dst_id] = undefined;
+  function delEdge(edgeId) {
+    edges[edgeId] = undefined;
   }
 
-  function build_layers(start) {
-    let layer_map = {};
-    start.forEach(function (id) {
-      layer_map[id] = 0;
-    })
+  function buildGraph() {
+    let graph = {};
+    for (let eid in edges) {
+      let edge = edges[eid];
+      if (nodes[edge.srcId] === undefined || nodes[edge.dstId] === undefined) {
+        continue;
+      }
+      if (graph[edge.srcId] === undefined) {
+        graph[edge.srcId] = {src:[], dst: [], data: nodes[edge.srcId]};
+      }
+      if (graph[edge.dstId] === undefined) {
+        graph[edge.dstId] = {src:[], dst: [], data: nodes[edge.dstId]};
+      }
+      graph[edge.srcId].dst.push(edge);
+      graph[edge.dstId].src.push(edge);
+    }
+    return graph;
+  }
 
-    // build layered nodes id
-    let graph = [start];
-    let layer = start;
-    for (let l = 1; layer.length > 0; l++) {
+  function buildLayers(graph) {
+    // first layer has no src
+    let layer = [];
+    for (let id in graph) {
+      if (graph[id].src.length === 0) {
+        graph[id].level = 0;
+        layer.push(id);
+      }
+    }
+
+    let layers = [layer];
+    for (let l = 1; ; l++) {
       layer = layer.map(function (id) {
-        return node_map[id].dst;
-      }).reduce(function (set1, set2) {
+        return graph[id].dst.map(function (edge) {
+          return edge.dstId;
+        });
+      })
+      .reduce(function (set1, set2) {
         set2.forEach(function (id) {
-          if (layer_map[id] === undefined) {
-            layer_map[id] = l;
+          if (graph[id].level === undefined) {
+            graph[id].level = l
             set1.push(id);
           }
         })
         return set1;
       }, []);
-      graph.push(layer);
+      if (layer.length > 0) {
+        layers.push(layer);
+      } else {
+        break;
+      }
     }
-
-    return graph;
+    return layers;
   }
-  function sort_layers(graph) {
-    // sketch coordsrcates
-    for (let round = 0; round < graph.length; ++round) {
-      let pos_map = {};
-      // srcit pos_map
-      graph.forEach(function (layer) {
+
+  function sortLayers(graph, layers) {
+    for (let round = 0; round < layers.length; ++round) {
+      layers.forEach(function (layer) {
         layer.forEach(function (id, index) {
-          pos_map[id] = (index + 1) / layer.length + 1;
+          graph[id].y = (index + 1) / layer.length + 1;
         });
       });
 
-      graph.forEach(function (layer) {
+      layers.forEach(function (layer) {
         layer.forEach(function (id) {
-          let node = get_node(id);
+          let node = graph[id];
           let sum = 0.0;
-          node.src.forEach(function (id) {
-            sum += pos_map[id];
+          node.src.forEach(function (edge) {
+            sum += graph[edge.dstId].y;
           });
-          node.dst.forEach(function (id) {
-            sum += pos_map[id];
+          node.dst.forEach(function (edge) {
+            sum += graph[edge.srcId].y;
           });
-          pos_map[id] = sum / (node.src.length + node.dst.length);
+          graph[id].y = sum / (node.src.length + node.dst.length);
         });
         layer = layer.sort(function (id1, id2) {
-          return pos_map[id1] - pos_map[id2];
+          return graph[id1].y - graph[id2].y;
         });
       });
     }
-
-    return graph;
   }
-  function layout(graph) {
-    let pos_map = {};
-    graph.forEach(function (layer, i) {
-      let x = width * i / graph.length;
+
+  function layoutLayers(graph, layers) {
+    layers.forEach(function (layer, i) {
+      let x = width * (i + 1) / (layers.length + 1);
       layer.forEach(function (id, j) {
         let y = height * (j + 1) / (layer.length + 1);
-        pos_map[id] = {x:x, y:y};
+        graph[id].x = x;
+        graph[id].y = y;
       });
     });
-    return pos_map;
   }
 
-  function render(graph1, graph2) {
-    let pos_map1 = build_geometry(graph1);
-    let pos_map2 = build_geometry(graph2);
+  function redraw() {
+    let graph = buildGraph();
+    let layers = buildLayers(graph);
+    sortLayers(graph, layers);
+    layoutLayers(graph, layers);
 
-  }
-
-  function redraw(start) {
-    let g = build_layers(start);
-    sort_layers(g);
-    let pos_map = layout(g);
-
-    for (let src_id in node_map) {
-      let node = node_map[src_id];
-      node.dst.forEach(function (dst_id) {
-        render_edge(pos_map[src_id], pos_map[dst_id], edge_map[src_id + '-' + dst_id]);
+    for (let srcId in graph) {
+      let srcNode = graph[srcId];
+      let edgeGroups = {};
+      srcNode.dst.forEach(function (edge) {
+        if (edgeGroups[edge.dstId] === undefined) {
+          edgeGroups[edge.dstId] = [];
+        }
+        edgeGroups[edge.dstId].push(edge);
       });
-      render_node(pos_map[src_id], node_map[src_id].data);
+
+      for (let dstId in edgeGroups) {
+        let dstNode = graph[dstId];
+        let edges = edgeGroups[dstId];
+        let step = (dstNode.y - srcNode.y) / (edges.length + 1);
+        let mid = {x: (srcNode.x + dstNode.x) / 2};
+        edges.forEach(function (edge, i) {
+          mid.y = (i+1) * step + srcNode.y;
+          renderEdge([srcNode, mid, dstNode], edge.data);
+        });
+      }
+      renderNode(srcNode);
     }
   }
 
-  function render_node(pos, data) {
+  function renderNode(node) {
     let group = svg.append('g')
-    .attr('transform', 'translate(' + pos.x + ',' + pos.y + ')');
-    draw_node(group, data);
+    .attr('transform', 'translate(' + node.x + ',' + node.y + ')');
+    drawNode(group, node.data);
   }
 
-  function render_edge(pos1, pos2, data) {
+  function renderEdge(anchors, data) {
     var lineFunc = d3.svg.line()
     .x(function (d) { return d.x; })
     .y(function (d) { return d.y; })
-    .interpolate('linear');
+    .interpolate('monotone');
+
+    let mid = anchors[Math.floor(anchors.length / 2)];
 
     let path = svg.append('path')
-    .attr('d', lineFunc([pos1, pos2]));
+    .attr('d', lineFunc(anchors)).attr('fill', 'none');
     let group = svg.append('g')
-    .attr('transform', 'translate(' + (pos1.x + pos2.x) / 2 + ',' + (pos1.y + pos2.y) / 2 + ')');
-    draw_edge(path, group, data);
+    .attr('transform', 'translate(' + mid.x + ',' + mid.y + ')');
+    drawEdge(path, group, data);
   }
 
   return {
-    add_node: add_node,
-    add_edge: add_edge,
+    addNode: addNode,
+    addEdge: addEdge,
     redraw: redraw
   };
 }
