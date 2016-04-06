@@ -1,6 +1,6 @@
 function demo() {
   let width = 800;
-  let height = 600;
+  let height = 300;
   var graph = d3graph(d3.select('#main'),
     width, height,
     function(group, data) {
@@ -19,7 +19,6 @@ function demo() {
   graph.addNode(0, 'n0');
   function randomUpdate() {
     function addNode() {
-      if (nodes.length > 30) return;
       let r = Math.floor(Math.random() * nodes.length);
       let id1 = nodes[r];
       let id2 = n;
@@ -29,7 +28,7 @@ function demo() {
       n = n + 1;
     }
     function delNode() {
-      if (nodes.length > 30) {
+      if (nodes.length > 10) {
         let r = Math.floor(Math.random() * nodes.length);
         graph.delNode(nodes.splice(r, 1));
       }
@@ -49,12 +48,12 @@ function demo() {
     delNode();
     addNode();
     addEdge();
-    graph.redraw(200);
+    graph.redraw(1000);
   }
 
   function run() {
     randomUpdate();
-    setTimeout(run, 300);
+    setTimeout(run, 2000);
   }
   run();
 }
