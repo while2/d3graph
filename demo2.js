@@ -1,6 +1,6 @@
 function demo() {
-  let width = 800;
-  let height = 300;
+  let width = 400;
+  let height = 200;
   var graph = d3graph(d3.select('#main'),
     width, height,
     function(group, data) {
