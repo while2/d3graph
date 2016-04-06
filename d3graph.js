@@ -16,7 +16,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     return node;
   }
   function delNode(nodeId) {
-    node_map[nodeId] = undefined;
+    nodes[nodeId] = undefined;
   }
   function addEdge(edgeId, srcId, dstId, data) {
     edges[edgeId] = {id: edgeId, srcId: srcId, dstId: dstId, data: data};
@@ -27,19 +27,17 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
   function buildGraph() {
     let graph = {};
+    for (let id in nodes) {
+      if (nodes[id] !== undefined) {
+        graph[id] = {src:[], dst: []};
+      }
+    }
     for (let eid in edges) {
       let edge = edges[eid];
-      if (nodes[edge.srcId] === undefined || nodes[edge.dstId] === undefined) {
-        continue;
+      if (graph[edge.srcId] !== undefined && graph[edge.dstId] != undefined) {
+        graph[edge.srcId].dst.push(edge);
+        graph[edge.dstId].src.push(edge);
       }
-      if (graph[edge.srcId] === undefined) {
-        graph[edge.srcId] = {src:[], dst: [], data: nodes[edge.srcId]};
-      }
-      if (graph[edge.dstId] === undefined) {
-        graph[edge.dstId] = {src:[], dst: [], data: nodes[edge.dstId]};
-      }
-      graph[edge.srcId].dst.push(edge);
-      graph[edge.dstId].src.push(edge);
     }
     return graph;
   }
@@ -117,7 +115,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     });
   }
 
-  function redraw() {
+  function redraw(duration, ease) {
     svg.selectAll('*').remove();
 
     let graph = buildGraph();
@@ -125,9 +123,9 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     sortLayers(graph, layers);
     layoutLayers(graph, layers);
 
-    if (graphQueue.length > 0) {
+    if (duration !==undefined && graphQueue.length > 0) {
       let prevGraph = graphQueue.shift();
-      renderAnimation(prevGraph, graph, 1000, 'cos');
+      renderAnimation(prevGraph, graph, duration, ease || 'cos');
     } else {
       render(graph);
     }
@@ -143,10 +141,6 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     });
   }
 
-  function render(graph) {
-    renderAnimation(graph, graph, 0, 'cos');
-  }
-
   function buildDummyNodes(graph1, graph2) {
     for (let id in graph2) {
       if (graph1[id] !== undefined) continue;
@@ -157,13 +151,39 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         let pid = queue.shift();
         let parent = graph1[pid];
         if (parent !== undefined) {
-          graph1[id] = {x: parent.x, y: parent.y, src: node.src, dst: node.dst};
+          graph1[id] = {x: parent.x, y: parent.y, src: [], dst: [], dummy: true};
+          parent.dst.push({srcId: pid, dstId: id});
           break;
         }
         graph2[pid].src.forEach(function (edge) {
           queue.push(edge.srcId);
         });
       }
+    }
+  }
+
+  function render(graph) {
+    for (let srcId in graph) {
+      let srcNode = graph[srcId];
+
+      let edgeGroups = {};
+      srcNode.dst.forEach(function (edge) {
+        if (edgeGroups[edge.dstId] === undefined) {
+          edgeGroups[edge.dstId] = [];
+        }
+        edgeGroups[edge.dstId].push(edge);
+      });
+
+      for (let dstId in edgeGroups) {
+        let dstNode = graph[dstId];
+        let edges = edgeGroups[dstId];
+        let anchors = buildEdgeAnchors(srcNode, dstNode, edges);
+        for (let i in edges) {
+          renderEdge(anchors[i], edges[i].data);
+        }
+      }
+
+      renderNode(srcNode, nodes[srcId]);
     }
   }
 
@@ -187,29 +207,50 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         let dstNode = graph[dstId];
         let prevDstNode = prevGraph[dstId];
         let edges = edgeGroups[dstId];
-        let prevAnchors = buildEdgeAnchors(prevSrcNode, prevDstNode, edges);
         let anchors = buildEdgeAnchors(srcNode, dstNode, edges);
-        for (let i in edges) {
-          renderEdgeAnimation(prevAnchors[i], anchors[i], edges[i].data, duration, ease);
+        if (prevSrcNode !== undefined && prevDstNode !== undefined) {
+          let prevAnchors = buildEdgeAnchors(prevSrcNode, prevDstNode, edges);
+          for (let i in edges) {
+            renderEdgeAnimation(prevAnchors[i], anchors[i], edges[i].data, duration, ease);
+          }
+        } else {
+          for (let i in edges) {
+            renderEdge(anchors[i], edges[i].data);
+          }
         }
       }
 
-      renderNodeAnimation(prevGraph[srcId], srcNode, duration, ease);
+      if (prevSrcNode !== undefined) {
+        renderNodeAnimation(prevSrcNode, srcNode, srcId, duration, ease);
+      } else {
+        renderNode(srcNode, nodes[srcId]);
+      }
     }
   }
 
-  function renderNode(node) {
-    let group = svg.append('g')
-    .attr('transform', 'translate(' + node.x + ',' + node.y + ')');
-    drawNode(group, node.data);
+  function renderEdges(prevGraph, graph) {
+    edges.forEach(function (edge) {
+      prevSrcNode(edge.srcId)
+    });
   }
 
-  function renderNodeAnimation(node1, node2, duration, ease) {
+  function renderNode(node, data) {
+    let group = svg.append('g')
+    .attr('transform', 'translate(' + node.x + ',' + node.y + ')');
+    drawNode(group, data);
+  }
+
+  function renderNodeAnimation(node1, node2, data, duration, ease) {
     let group = svg.append('g');
     group.attr('transform', 'translate(' + node1.x + ',' + node1.y + ')')
-    group.transition().duration(duration).ease(ease)
+    let animation = group.transition().duration(duration).ease(ease)
     .attr('transform', 'translate(' + node2.x + ',' + node2.y + ')');
-    drawNode(group, node2.data);
+    drawNode(group, data);
+    if (node2.dummy) {
+      animation.each('end', function () {
+        group.remove();
+      });
+    }
   }
 
   let lineFunc = d3.svg.line()
@@ -245,7 +286,11 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
   return {
     addNode: addNode,
+    delNode: delNode,
     addEdge: addEdge,
-    redraw: redraw
+    delEdge: delEdge,
+    redraw: redraw,
+    nodes: nodes,
+    edges: edges
   };
 }
