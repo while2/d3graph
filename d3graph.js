@@ -61,7 +61,8 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         queue.push(undefined);
         continue;
       }
-      graph[id].level = level;
+
+      graph[id].level = graph[id].level || level;
       graph[id].dst.forEach(function (edge) {
         queue.push(edge.dstId);
       });

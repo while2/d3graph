@@ -19,7 +19,7 @@ function demo() {
   graph.addNode(0, 'n0');
   function randomUpdate() {
     function addNode() {
-      if (nodes.length > 10) return;
+      if (nodes.length > 30) return;
       let r = Math.floor(Math.random() * nodes.length);
       let id1 = nodes[r];
       let id2 = n;
@@ -29,7 +29,7 @@ function demo() {
       n = n + 1;
     }
     function delNode() {
-      if (nodes.length > 10) {
+      if (nodes.length > 30) {
         let r = Math.floor(Math.random() * nodes.length);
         graph.delNode(nodes.splice(r, 1));
       }
@@ -49,7 +49,7 @@ function demo() {
     delNode();
     addNode();
     addEdge();
-    graph.redraw(100);
+    graph.redraw(200);
   }
 
   function run() {
