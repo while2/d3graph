@@ -4,7 +4,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
   let nodes = {};
   let edges = {};
-  let graphQueue = [];
+  let history = [];
 
   function addNode(id, data) {
     if (nodes[id] !== undefined) throw 'Node ' + id + ' already exists';
@@ -43,36 +43,35 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function buildLayers(graph) {
+    let queue = [];
     // first layer has no src
-    let layer = [];
     for (let id in graph) {
       if (graph[id].src.length === 0) {
-        graph[id].level = 0;
-        layer.push(id);
+        queue.push(id);
       }
     }
+    queue.push(undefined);
 
-    let layers = [layer];
-    for (let l = 1; ; l++) {
-      layer = layer.map(function (id) {
-        return graph[id].dst.map(function (edge) {
-          return edge.dstId;
-        });
-      })
-      .reduce(function (set1, set2) {
-        set2.forEach(function (id) {
-          if (graph[id].level === undefined) {
-            graph[id].level = l
-            set1.push(id);
-          }
-        })
-        return set1;
-      }, []);
-      if (layer.length > 0) {
-        layers.push(layer);
-      } else {
-        break;
+    let level = 0;
+    while (queue.length > 0) {
+      let id = queue.shift();
+      if (id === undefined) {
+        level++;
+        if (queue.length === 0) break;
+        queue.push(undefined);
+        continue;
       }
+      graph[id].level = level;
+      graph[id].dst.forEach(function (edge) {
+        queue.push(edge.dstId);
+      });
+    }
+    let layers = [];
+    for (let i = 0; i < level; ++i) {
+      layers.push([]);
+    }
+    for (let id in graph) {
+      layers[graph[id].level].push(id);
     }
     return layers;
   }
@@ -104,7 +103,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     }
   }
 
-  function layoutLayers(graph, layers) {
+  function layoutNodes(graph, layers) {
     layers.forEach(function (layer, i) {
       let x = width * (i + 1) / (layers.length + 1);
       layer.forEach(function (id, j) {
@@ -115,30 +114,63 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     });
   }
 
+  function layoutEdges(graph, layers) {
+    let edgeAnchors = {};
+    for (let srcId in graph) {
+      let srcNode = graph[srcId];
+      let edgeGroups = {};
+      srcNode.dst.forEach(function (edge) {
+        if (edgeGroups[edge.dstId] === undefined) {
+          edgeGroups[edge.dstId] = [];
+        }
+        edgeGroups[edge.dstId].push(edge);
+      });
+
+      let srcMargin = 0.5 * height / (layers[srcNode.level].length + 1);
+
+      for (let dstId in edgeGroups) {
+        let edges = edgeGroups[dstId];
+        let dstNode = graph[dstId];
+        let dstMargin = 0.5 * height / (layers[dstNode.level].length + 1);
+        let top = (srcNode.y - srcMargin + dstNode.y - dstMargin) / 2;
+        let bottom = (srcNode.y + srcMargin + dstNode.y + dstMargin) / 2;
+        let step = (bottom - top) / (edges.length + 1);
+        let x = (srcNode.x + dstNode.x) / 2;
+        edges.forEach(function (edge, i) {
+          let y = (i+1) * step + top;
+          edgeAnchors[edge.id] = {x: x, y: y};
+        });
+      }
+    }
+    return edgeAnchors;
+  }
+
   function redraw(duration, ease) {
     svg.selectAll('*').remove();
 
     let graph = buildGraph();
     let layers = buildLayers(graph);
     sortLayers(graph, layers);
-    layoutLayers(graph, layers);
+    layoutNodes(graph, layers);
+    let anchors = layoutEdges(graph, layers);
 
-    if (duration !==undefined && graphQueue.length > 0) {
-      let prevGraph = graphQueue.shift();
-      renderAnimation(prevGraph, graph, duration, ease || 'cos');
+    if (duration !== undefined && history.length > 0) {
+      ease = ease || 'cos';
+      let prevGraph = history.shift();
+      let prevAnchors = history.shift();
+      renderAnimation(prevGraph, graph, prevAnchors, anchors, duration, ease);
     } else {
-      render(graph);
+      render(graph, anchors);
     }
-    graphQueue.push(graph);
-  }
 
-  function buildEdgeAnchors(srcNode, dstNode, edges) {
-    let step = (dstNode.y - srcNode.y) / (edges.length + 1);
-    let x = (srcNode.x + dstNode.x) / 2;
-    return edges.map(function (edge, i) {
-      let y = (i+1) * step + srcNode.y;
-      return [srcNode, {x: x, y: y}, dstNode];
-    });
+    let saveGraph = {};
+    for (let id in graph) {
+      if (graph[id].dummy === undefined) {
+        saveGraph[id] = graph[id];
+      }
+    }
+    history.push(saveGraph);
+    history.push(anchors);
   }
 
   function buildDummyNodes(graph1, graph2) {
@@ -151,8 +183,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         let pid = queue.shift();
         let parent = graph1[pid];
         if (parent !== undefined) {
-          graph1[id] = {x: parent.x, y: parent.y, src: [], dst: [], dummy: true};
-          parent.dst.push({srcId: pid, dstId: id});
+          graph1[id] = {x: parent.x, y: parent.y, dummy: true};
           break;
         }
         graph2[pid].src.forEach(function (edge) {
@@ -162,77 +193,69 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     }
   }
 
-  function render(graph) {
-    for (let srcId in graph) {
-      let srcNode = graph[srcId];
-
-      let edgeGroups = {};
-      srcNode.dst.forEach(function (edge) {
-        if (edgeGroups[edge.dstId] === undefined) {
-          edgeGroups[edge.dstId] = [];
-        }
-        edgeGroups[edge.dstId].push(edge);
-      });
-
-      for (let dstId in edgeGroups) {
-        let dstNode = graph[dstId];
-        let edges = edgeGroups[dstId];
-        let anchors = buildEdgeAnchors(srcNode, dstNode, edges);
-        for (let i in edges) {
-          renderEdge(anchors[i], edges[i].data);
-        }
+  function render(graph, anchors) {
+    for (let id in edges) {
+      let edge = edges[id];
+      let srcNode = graph[edge.srcId];
+      let dstNode = graph[edge.dstId];
+      let anchor = anchors[id];
+      if (anchor !== undefined) {
+        renderEdge([srcNode, anchor, dstNode], edge.data);
       }
+    }
 
-      renderNode(srcNode, nodes[srcId]);
+    for (let id in graph) {
+      renderNode(graph[id], nodes[id]);
     }
   }
 
-  function renderAnimation(prevGraph, graph, duration, ease) {
+  function renderAnimation(prevGraph, graph, prevAnchors, anchors, duration, ease) {
     buildDummyNodes(prevGraph, graph);
     buildDummyNodes(graph, prevGraph);
 
-    for (let srcId in graph) {
-      let srcNode = graph[srcId];
-      let prevSrcNode = prevGraph[srcId];
+    for (let id in anchors) {
+      let edge = edges[id];
+      let path = [graph[edge.srcId], anchors[id], graph[edge.dstId]];
 
-      let edgeGroups = {};
-      srcNode.dst.forEach(function (edge) {
-        if (edgeGroups[edge.dstId] === undefined) {
-          edgeGroups[edge.dstId] = [];
-        }
-        edgeGroups[edge.dstId].push(edge);
-      });
-
-      for (let dstId in edgeGroups) {
-        let dstNode = graph[dstId];
-        let prevDstNode = prevGraph[dstId];
-        let edges = edgeGroups[dstId];
-        let anchors = buildEdgeAnchors(srcNode, dstNode, edges);
-        if (prevSrcNode !== undefined && prevDstNode !== undefined) {
-          let prevAnchors = buildEdgeAnchors(prevSrcNode, prevDstNode, edges);
-          for (let i in edges) {
-            renderEdgeAnimation(prevAnchors[i], anchors[i], edges[i].data, duration, ease);
-          }
-        } else {
-          for (let i in edges) {
-            renderEdge(anchors[i], edges[i].data);
-          }
-        }
-      }
-
-      if (prevSrcNode !== undefined) {
-        renderNodeAnimation(prevSrcNode, srcNode, srcId, duration, ease);
+      let prevSrcNode = prevGraph[edge.srcId];
+      let prevDstNode = prevGraph[edge.dstId];
+      if (prevSrcNode === undefined || prevDstNode === undefined) {
+        renderEdge(path, edge.data);
       } else {
-        renderNode(srcNode, nodes[srcId]);
+        let prevAnchor = prevAnchors[id];
+        if (prevAnchor === undefined) {
+          prevAnchor = {x: (prevSrcNode.x + prevDstNode.x) / 2, y: (prevSrcNode.y + prevDstNode.y) / 2};
+        }
+        let prevPath = [prevSrcNode, prevAnchor, prevDstNode];
+        renderEdgeAnimation(prevPath, path, edge.data, duration, ease);
+      }
+    }
+
+    // for vanishing edges
+    for (let id in prevAnchors) {
+      if (anchors[id] !== undefined) continue;
+      let edge = edges[id];
+      let srcNode = graph[edge.srcId];
+      let dstNode = graph[edge.dstId];
+      if (srcNode === undefined || dstNode === undefined) continue;
+      let anchor = {x: (srcNode.x + dstNode.x) / 2, y: (srcNode.y + dstNode.y) / 2};
+      let path = [srcNode, anchor, dstNode];
+      let prevPath = [prevGraph[edge.srcId], prevAnchors[id], prevGraph[edge.dstId]];
+      renderEdgeAnimation(prevPath, path, edge.data, duration, ease);
+    }
+
+    for (let id in graph) {
+      let node = graph[id];
+      let prevNode = prevGraph[id];
+
+      if (prevNode !== undefined) {
+        renderNodeAnimation(prevNode, node, nodes[id], duration, ease);
+      } else {
+        renderNode(node, nodes[id]);
       }
     }
   }
 
-  function renderEdges(prevGraph, graph) {
-    edges.forEach(function (edge) {
-      prevSrcNode(edge.srcId)
-    });
-  }
 
   function renderNode(node, data) {
     let group = svg.append('g')
@@ -243,9 +266,10 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   function renderNodeAnimation(node1, node2, data, duration, ease) {
     let group = svg.append('g');
     group.attr('transform', 'translate(' + node1.x + ',' + node1.y + ')')
+    drawNode(group, data);
     let animation = group.transition().duration(duration).ease(ease)
     .attr('transform', 'translate(' + node2.x + ',' + node2.y + ')');
-    drawNode(group, data);
+
     if (node2.dummy) {
       animation.each('end', function () {
         group.remove();
@@ -256,7 +280,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   let lineFunc = d3.svg.line()
   .x(function (d) { return d.x; })
   .y(function (d) { return d.y; })
-  .interpolate('monotone');
+  .interpolate('basis');
 
   function renderEdge(anchors, data) {
     let mid = anchors[Math.floor(anchors.length / 2)];

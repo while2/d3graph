@@ -19,6 +19,7 @@ function demo() {
   graph.addNode(0, 'n0');
   function randomUpdate() {
     function addNode() {
+      if (nodes.length > 10) return;
       let r = Math.floor(Math.random() * nodes.length);
       let id1 = nodes[r];
       let id2 = n;
@@ -28,27 +29,32 @@ function demo() {
       n = n + 1;
     }
     function delNode() {
-      if (nodes.length > 4) {
+      if (nodes.length > 10) {
         let r = Math.floor(Math.random() * nodes.length);
         graph.delNode(nodes.splice(r, 1));
       }
     }
     function addEdge() {
-      let id = Math.floor(edges.length);
-      let id2 = Math.floor(edges.length);
-      if (id !== id2) {
-        graph.addEdge('e' + id + id2, nodes[id], nodes[id2]);
+      let r1 = Math.floor(Math.random() * nodes.length);
+      let r2 = Math.floor(Math.random() * nodes.length);
+      let id1 = nodes[r1];
+      let id2 = nodes[r2];
+      if (id1 < id2) {
+        graph.addEdge('e' + id1 + id2, id1, id2);
+      } else if (id2 < id1) {
+        graph.addEdge('e' + id1 + id2, id2, id1);
       }
     }
 
     delNode();
     addNode();
-    graph.redraw(1000);
+    addEdge();
+    graph.redraw(100);
   }
 
   function run() {
     randomUpdate();
-    setTimeout(run, 1500);
+    setTimeout(run, 300);
   }
   run();
 }

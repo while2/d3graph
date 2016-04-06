@@ -17,10 +17,14 @@ function demo() {
   graph.addNode(0, '0');
   graph.addNode(1, '1');
   graph.addEdge(01, 0, 1);
-  graph.redraw(1000);
+  graph.redraw();
 
-  graph.delNode(1);
+  graph.addNode(2, '2');
+  graph.addEdge(12, 1, 2);
+  //graph.addEdge(012, 0, 1);
+  //graph.addEdge(013, 0, 1);
+  //graph.delNode(1);
   setTimeout(function() {
-    graph.redraw(1000);
+    graph.redraw(500);
   }, 1500);
 }
