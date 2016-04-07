@@ -1,30 +1,34 @@
 function demo() {
   let width = 800;
   let height = 600;
-  var graph = d3graph(d3.select('#main'),
+  var graph = d3graph(d3.select('#main'), // draw graph on the selected 'main' div
     width, height,
-    function(group, data) {
+    function(group, data) { // drawNode function
       let size = 5;
-      group.append('circle').attr('r', 5).attr('stroke','#AAA').attr('fill', '#FFF');
-      group.append('text').text(data);
+      group.append('circle').attr('r', data.size).attr('stroke','#000').attr('fill', data.color);
+      group.append('text').text(data.text);
     },
-    function(path, group, data) {
-      path.attr('stroke','#000')
-      group.append('text').text(data);
+    function(path, group, data) { // drawEdge function
+      path.attr('stroke','#000');
+      if (data.dash) {
+        path.attr('stroke-dasharray', data.dash);
+      }
+      group.append('text').text(data.text);
     }
   );
 
-  graph.addNode(0, '0');
-  graph.addNode(1, '1');
-  graph.addEdge(01, 0, 1);
+  graph.addNode('a', {text: 'a', size: 5, color: '#FAF'});
+  graph.addNode('b', {text: 'b', size: 7, color: '#AFF'});
+  graph.addEdge('a-b', 'a', 'b', {text: 'a-b'});
   graph.redraw();
 
-  graph.addNode(2, '2');
-  graph.addEdge(12, 1, 2);
-  //graph.addEdge(012, 0, 1);
-  //graph.addEdge(013, 0, 1);
-  //graph.delNode(1);
+  graph.addNode('c', {text: 'c', size: 3, color: '#FAA'});
+  graph.addEdge('a-c', 'a', 'c', {dash: [2,2]});
+  graph.redraw(500);
+
   setTimeout(function() {
+    graph.addEdge('a-c-2', 'a', 'c', {});
+    graph.addEdge('b-c', 'b', 'c', {});
     graph.redraw(500);
   }, 1500);
 }

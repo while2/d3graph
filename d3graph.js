@@ -68,11 +68,12 @@ function d3graph (div, width, height, drawNode, drawEdge) {
       });
     }
     let layers = [];
-    for (let i = 0; i < level; ++i) {
-      layers.push([]);
-    }
     for (let id in graph) {
-      layers[graph[id].level].push(id);
+      let node = graph[id];
+      if (layers[node.level] === undefined) {
+        layers[node.level] = [];
+      }
+      layers[node.level].push(id);
     }
     return layers;
   }
