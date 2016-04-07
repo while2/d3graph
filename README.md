@@ -6,6 +6,8 @@ d3graph automatically layout the graph with layers. And the history layout can b
 
 ![](./example/demo.gif)
 
+[Demo](http://yihe2.github.io/d3graph)
+
 ## Usage
 
 Call function `d3graph` to create a graph object, which provide following interfaces:
