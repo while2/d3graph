@@ -21,9 +21,14 @@ function demo() {
     function addNode() {
       let r = Math.floor(Math.random() * nodes.length);
       let id1 = nodes[r];
-      let id2 = (n++) % 100;
+      let id2 = (n++) % 100; // reuse nodes
       graph.addNode(id2, id2);
-      graph.addEdge('e'+id1+id2, id1, id2);
+      if (id1 < id2) {
+        // id1+id2 to limit total edges
+        graph.addEdge(id1+id2, id1, id2);
+      } else if (id2 < id1) {
+        graph.addEdge(id1+id2, id2, id1);
+      }
       nodes.push(id2);
     }
     function delNode() {
@@ -38,9 +43,9 @@ function demo() {
       let id1 = nodes[r1];
       let id2 = nodes[r2];
       if (id1 < id2) {
-        graph.addEdge('e' + id1 + id2, id1, id2);
+        graph.addEdge(id1 + id2, id1, id2);
       } else if (id2 < id1) {
-        graph.addEdge('e' + id2 + id1, id2, id1);
+        graph.addEdge(id2 + id1, id2, id1);
       }
     }
 

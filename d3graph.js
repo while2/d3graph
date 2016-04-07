@@ -7,13 +7,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   let history = [];
 
   function addNode(id, data) {
-    if (nodes[id] !== undefined) throw 'Node ' + id + ' already exists';
     nodes[id] = data || id;
-  }
-  function getNode(id) {
-    let node = nodes[id];
-    if (node == undefined) throw 'Node ' + id + ' does not exist';
-    return node;
   }
   function delNode(nodeId) {
     nodes[nodeId] = undefined;
@@ -53,20 +47,24 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     queue.push(undefined);
 
     let level = 0;
-    while (queue.length > 0) {
+    while (true) {
       let id = queue.shift();
       if (id === undefined) {
-        level++;
         if (queue.length === 0) break;
+        level++;
         queue.push(undefined);
         continue;
       }
 
-      graph[id].level = graph[id].level || level;
-      graph[id].dst.forEach(function (edge) {
-        queue.push(edge.dstId);
-      });
+      let node = graph[id];
+      if (node.level === undefined) {
+        node.level = level;
+        node.dst.forEach(function (edge) {
+          queue.push(edge.dstId);
+        });
+      }
     }
+
     let layers = [];
     for (let id in graph) {
       let node = graph[id];
@@ -79,7 +77,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function sortLayers(graph, layers) {
-    let round = layers.length;
+    let round = layers.length * 2;
     while (true) {
       layers.forEach(function (layer) {
         layer.forEach(function (id, index) {
