@@ -102,7 +102,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
           graph[id].y = sum / (node.src.length + node.dst.length);
         });
         layer = layer.sort(function (id1, id2) {
-          return graph[id1].y - graph[id2].y;
+          return graph[id1].y < graph[id2].y ? -1 : 1;
         });
       });
     }
@@ -135,16 +135,36 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
       for (let dstId in edgeGroups) {
         let edges = edgeGroups[dstId];
+        edges = edges.sort(function (edge1, edge2) {
+          return edge1.id < edge2.id ? -1 : 1;
+        })
         let dstNode = graph[dstId];
-        let dstMargin = 0.5 * height / (layers[dstNode.level].length + 1);
-        let top = (srcNode.y - srcMargin + dstNode.y - dstMargin) / 2;
-        let bottom = (srcNode.y + srcMargin + dstNode.y + dstMargin) / 2;
-        let step = (bottom - top) / (edges.length + 1);
-        let x = (srcNode.x + dstNode.x) / 2;
-        edges.forEach(function (edge, i) {
-          let y = (i+1) * step + top;
-          edgeAnchors[edge.id] = {x: x, y: y};
-        });
+        if (dstNode.level !== srcNode.level) {
+          let dstMargin = 0.5 * height / (layers[dstNode.level].length + 1);
+          let top = (srcNode.y - srcMargin + dstNode.y - dstMargin) / 2;
+          let bottom = (srcNode.y + srcMargin + dstNode.y + dstMargin) / 2;
+          let step = (bottom - top) / (edges.length + 1);
+          let x = (srcNode.x + dstNode.x) / 2;
+          edges.forEach(function (edge, i) {
+            let y = (i+1) * step + top;
+            edgeAnchors[edge.id] = {x: x, y: y};
+          });
+        } else {
+          // same level, spread anchors horizontally
+          let y = (srcNode.y + dstNode.y) / 2;
+          let margin = (0.5 * width / layers.length + 1) * Math.abs(srcNode.y - dstNode.y) / height;
+          let left = srcNode.x - margin;
+          let right = srcNode.x + margin;
+          if (edges.length % 2 === 0) {
+            var step = (right - left) / (edges.length - 1);
+          } else {
+            var step = (right - left) / edges.length;
+          }
+          edges.forEach(function (edge, i) {
+            let x = i * step + left;
+            edgeAnchors[edge.id] = {x: x, y: y};
+          });
+        }
       }
     }
     return edgeAnchors;
