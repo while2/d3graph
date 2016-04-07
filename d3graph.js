@@ -138,7 +138,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         let edges = edgeGroups[dstId];
         edges = edges.sort(function (edge1, edge2) {
           return edge1.id < edge2.id ? -1 : 1;
-        })
+        });
         let dstNode = graph[dstId];
         if (dstNode.level !== srcNode.level) {
           let dstMargin = 0.5 * height / (layers[dstNode.level].length + 1);
@@ -267,7 +267,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
       let anchor = {x: (srcNode.x + dstNode.x) / 2, y: (srcNode.y + dstNode.y) / 2};
       let path = [srcNode, anchor, dstNode];
       let prevPath = [prevGraph[edge.srcId], prevAnchors[id], prevGraph[edge.dstId]];
-      renderEdgeAnimation(prevPath, path, edge.data, duration, ease);
+      renderEdgeAnimation(prevPath, path, edge.data, duration, ease, true);
     }
 
     for (let id in graph) {
@@ -317,7 +317,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     drawEdge(path, group, data);
   }
 
-  function renderEdgeAnimation(anchors1, anchors2, data, duration, ease) {
+  function renderEdgeAnimation(anchors1, anchors2, data, duration, ease, dummy) {
     let path = svg.append('path').attr('fill', 'none');
     path.attr('d', lineFunc(anchors1));
     path.transition().duration(duration).ease(ease)
@@ -328,10 +328,15 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
     let group = svg.append('g');
     group.attr('transform', 'translate(' + mid1.x + ',' + mid1.y + ')');
-    group.transition().duration(duration).ease(ease)
-    .attr('transform', 'translate(' + mid2.x + ',' + mid2.y + ')');
-
     drawEdge(path, group, data);
+    let animation = group.transition().duration(duration).ease(ease)
+    .attr('transform', 'translate(' + mid2.x + ',' + mid2.y + ')');
+    if (dummy) {
+      animation.each('end', function () {
+        path.remove();
+        group.remove();
+      });
+    }
   }
 
   return {
