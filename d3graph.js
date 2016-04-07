@@ -150,7 +150,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
             edgeAnchors[edge.id] = {x: x, y: y};
           });
         } else {
-          // same level, spread anchors horizontally
+          // same level, scatter anchors horizontally
           let y = (srcNode.y + dstNode.y) / 2;
           let margin = (0.5 * width / layers.length + 1) * Math.abs(srcNode.y - dstNode.y) / height;
           let left = srcNode.x - margin;
