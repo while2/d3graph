@@ -8,7 +8,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
   function addNode(id, data) {
     if (nodes[id] !== undefined) throw 'Node ' + id + ' already exists';
-    nodes[id] = data;
+    nodes[id] = data || id;
   }
   function getNode(id) {
     let node = nodes[id];
@@ -83,7 +83,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     while (true) {
       layers.forEach(function (layer) {
         layer.forEach(function (id, index) {
-          graph[id].y = (index + 1) / layer.length + 1;
+          graph[id].y = (index + 1) / (layer.length + 1);
         });
       });
       if (round-- < 0) {
@@ -93,14 +93,14 @@ function d3graph (div, width, height, drawNode, drawEdge) {
       layers.forEach(function (layer) {
         layer.forEach(function (id) {
           let node = graph[id];
-          let sum = 0.0;
+          let sum = node.y;
           node.src.forEach(function (edge) {
-            sum += graph[edge.dstId].y;
-          });
-          node.dst.forEach(function (edge) {
             sum += graph[edge.srcId].y;
           });
-          graph[id].y = sum / (node.src.length + node.dst.length);
+          node.dst.forEach(function (edge) {
+            sum += graph[edge.dstId].y;
+          });
+          graph[id].y = sum / (1 + node.src.length + node.dst.length);
         });
         layer = layer.sort(function (id1, id2) {
           return graph[id1].y < graph[id2].y ? -1 : 1;
