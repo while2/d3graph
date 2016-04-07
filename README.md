@@ -1,12 +1,18 @@
 # d3graph
 
-A javascript graph visualization lib base on d3.js.
+d3graph is a javascript graph visualization lib base on d3.js.
 
-d3graph automatically layout the graph with layers. And the history layout can be remembered so that the change of the graph can be visualized with an animation.
+1. For DAG(Directed Acyclic Graph) only.
+2. Automatically layout nodes and edges.
+3. Remember last layout and visualize the transition of graph with animation.
+
+> An undirected graph can be converted to DAG by assigning direction to edges based on some order of the nodes.
+
+A simple example with code [here](#example).
 
 ![](./example/demo.gif)
 
-[Demo](http://yihe2.github.io/d3graph)
+A random growing graph [Demo](http://yihe2.github.io/d3graph).
 
 ## Usage
 
@@ -34,7 +40,7 @@ Container is a selector where the graph should appear, typically a div. Width an
 
 d3graph will automatically resolve the layout of nodes and edges. For each node, a group will be created at the corresponding position, and passed to `drawNode` along with the `data` which is provided by `addNode`. For each edge, a `path` will be created according to the layout, also a `group` will be created at the middle of the `path`, both will be passed to `drawEdge`, along with the `data` provided by `addEdge`.
 
-## Demo
+## Example
 
 The following script visualized as the above picture.
 
@@ -81,4 +87,6 @@ setTimeout(function() {
 
 ## Layout
 
-d3graph draw nodes hierarchically with there topological order. There might be edges between nodes at the same level, while no edge will link non-neighboring levels.
+First of all the nodes are topologically sorted and group by their level. Nodes with the same level share the same x-coordinates and group of nodes scatter from left to right uniformly. Then an order was optimized in each group to reduce edge intersections.
+
+Note that some edge may connect nodes with the same level, since the level is defined only by the distance from the initial nodes. Good news is that in such a way, no edge will spread over more than 2 levels.
