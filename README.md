@@ -4,7 +4,7 @@ A javascript graph visualization lib base on d3.js.
 
 d3graph automatically layout the graph with layers. And the history layout can be remembered so that the change of the graph can be visualized with an animation.
 
-<img src="demo.gif" dynsrc="demo.gif" loop=-1/>
+![](./example/demo-loop.gif)
 
 ## Usage
 
