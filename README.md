@@ -4,6 +4,8 @@ A javascript graph visualization lib base on d3.js.
 
 d3graph automatically layout the graph with layers. And the history layout can be remembered so that the change of the graph can be visualized with an animation.
 
+<img src="demo.gif" dynsrc="demo.gif" loop=-1/>
+
 ## Usage
 
 Call function `d3graph` to create a graph object, which provide following interfaces:
@@ -77,4 +79,4 @@ setTimeout(function() {
 
 ## Layout
 
-d3graph draw nodes hierarchically, with.
+d3graph draw nodes hierarchically with there topological order. There might be edges between nodes at the same level, while no edge will link non-neighboring levels.
