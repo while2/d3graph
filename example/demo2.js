@@ -16,16 +16,15 @@ function demo() {
 
   let nodes = [0];
   let n = 1;
-  graph.addNode(0, 'n0');
+  graph.addNode(0, 0);
   function randomUpdate() {
     function addNode() {
       let r = Math.floor(Math.random() * nodes.length);
       let id1 = nodes[r];
-      let id2 = n;
-      graph.addNode(id2, 'n'+id2);
+      let id2 = (n++) % 100;
+      graph.addNode(id2, id2);
       graph.addEdge('e'+id1+id2, id1, id2);
       nodes.push(id2);
-      n = n + 1;
     }
     function delNode() {
       if (nodes.length > 10) {
@@ -41,7 +40,7 @@ function demo() {
       if (id1 < id2) {
         graph.addEdge('e' + id1 + id2, id1, id2);
       } else if (id2 < id1) {
-        graph.addEdge('e' + id1 + id2, id2, id1);
+        graph.addEdge('e' + id2 + id1, id2, id1);
       }
     }
 

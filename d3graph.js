@@ -86,9 +86,8 @@ function d3graph (div, width, height, drawNode, drawEdge) {
           graph[id].y = (index + 1) / (layer.length + 1);
         });
       });
-      if (round-- < 0) {
-        break;
-      }
+
+      if (--round < 0) break;
 
       layers.forEach(function (layer) {
         layer.forEach(function (id) {
