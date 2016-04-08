@@ -1,10 +1,10 @@
 function demo() {
-  let width = 800;
-  let height = 600;
+  var width = 800;
+  var height = 600;
   var graph = d3graph(d3.select('#main'), // draw graph on the selected 'main' div
     width, height,
     function(group, data) { // drawNode function
-      let size = 5;
+      var size = 5;
       group.append('circle').attr('r', data.size).attr('stroke','#000').attr('fill', data.color);
       group.append('text').text(data.text);
     },

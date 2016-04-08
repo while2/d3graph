@@ -1,10 +1,10 @@
 function d3graph (div, width, height, drawNode, drawEdge) {
-  let svg = div.append('svg')
+  var svg = div.append('svg')
   .attr('width', width).attr('height', height);
 
-  let nodes = {};
-  let edges = {};
-  let history = [];
+  var nodes = {};
+  var edges = {};
+  var history = [];
 
   function addNode(id, data) {
     nodes[id] = data || id;
@@ -20,14 +20,14 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function buildGraph() {
-    let graph = {};
-    for (let id in nodes) {
+    var graph = {};
+    for (var id in nodes) {
       if (nodes[id] !== undefined) {
         graph[id] = {src:[], dst: []};
       }
     }
-    for (let eid in edges) {
-      let edge = edges[eid];
+    for (var eid in edges) {
+      var edge = edges[eid];
       if (graph[edge.srcId] !== undefined && graph[edge.dstId] != undefined) {
         graph[edge.srcId].dst.push(edge);
         graph[edge.dstId].src.push(edge);
@@ -37,18 +37,18 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function buildLayers(graph) {
-    let queue = [];
+    var queue = [];
     // first layer has no src
-    for (let id in graph) {
+    for (var id in graph) {
       if (graph[id].src.length === 0) {
         queue.push(id);
       }
     }
     queue.push(undefined);
 
-    let level = 0;
+    var level = 0;
     while (true) {
-      let id = queue.shift();
+      var id = queue.shift();
       if (id === undefined) {
         if (queue.length === 0) break;
         level++;
@@ -56,7 +56,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         continue;
       }
 
-      let node = graph[id];
+      var node = graph[id];
       if (node.level === undefined) {
         node.level = level;
         node.dst.forEach(function (edge) {
@@ -65,9 +65,9 @@ function d3graph (div, width, height, drawNode, drawEdge) {
       }
     }
 
-    let layers = [];
-    for (let id in graph) {
-      let node = graph[id];
+    var layers = [];
+    for (var id in graph) {
+      var node = graph[id];
       if (layers[node.level] === undefined) {
         layers[node.level] = [];
       }
@@ -77,7 +77,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function sortLayers(graph, layers) {
-    let round = layers.length * 2;
+    var round = layers.length * 2;
     while (true) {
       layers.forEach(function (layer) {
         layer.forEach(function (id, index) {
@@ -89,8 +89,8 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
       layers.forEach(function (layer) {
         layer.forEach(function (id) {
-          let node = graph[id];
-          let sum = node.y;
+          var node = graph[id];
+          var sum = node.y;
           node.src.forEach(function (edge) {
             sum += graph[edge.srcId].y;
           });
@@ -108,9 +108,9 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
   function layoutNodes(graph, layers) {
     layers.forEach(function (layer, i) {
-      let x = width * (i + 1) / (layers.length + 1);
+      var x = width * (i + 1) / (layers.length + 1);
       layer.forEach(function (id, j) {
-        let y = height * (j + 1) / (layer.length + 1);
+        var y = height * (j + 1) / (layer.length + 1);
         graph[id].x = x;
         graph[id].y = y;
       });
@@ -118,10 +118,10 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function layoutEdges(graph, layers) {
-    let edgeAnchors = {};
-    for (let srcId in graph) {
-      let srcNode = graph[srcId];
-      let edgeGroups = {};
+    var edgeAnchors = {};
+    for (var srcId in graph) {
+      var srcNode = graph[srcId];
+      var edgeGroups = {};
       srcNode.dst.forEach(function (edge) {
         if (edgeGroups[edge.dstId] === undefined) {
           edgeGroups[edge.dstId] = [];
@@ -129,37 +129,37 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         edgeGroups[edge.dstId].push(edge);
       });
 
-      let srcMargin = 0.5 * height / (layers[srcNode.level].length + 1);
+      var srcMargin = 0.5 * height / (layers[srcNode.level].length + 1);
 
-      for (let dstId in edgeGroups) {
-        let edges = edgeGroups[dstId];
+      for (var dstId in edgeGroups) {
+        var edges = edgeGroups[dstId];
         edges = edges.sort(function (edge1, edge2) {
           return edge1.id < edge2.id ? -1 : 1;
         });
-        let dstNode = graph[dstId];
+        var dstNode = graph[dstId];
         if (dstNode.level !== srcNode.level) {
-          let dstMargin = 0.5 * height / (layers[dstNode.level].length + 1);
-          let top = (srcNode.y - srcMargin + dstNode.y - dstMargin) / 2;
-          let bottom = (srcNode.y + srcMargin + dstNode.y + dstMargin) / 2;
-          let step = (bottom - top) / (edges.length + 1);
-          let x = (srcNode.x + dstNode.x) / 2;
+          var dstMargin = 0.5 * height / (layers[dstNode.level].length + 1);
+          var top = (srcNode.y - srcMargin + dstNode.y - dstMargin) / 2;
+          var bottom = (srcNode.y + srcMargin + dstNode.y + dstMargin) / 2;
+          var step = (bottom - top) / (edges.length + 1);
+          var x = (srcNode.x + dstNode.x) / 2;
           edges.forEach(function (edge, i) {
-            let y = (i+1) * step + top;
+            var y = (i+1) * step + top;
             edgeAnchors[edge.id] = {x: x, y: y};
           });
         } else {
           // same level, scatter anchors horizontally
-          let y = (srcNode.y + dstNode.y) / 2;
-          let margin = (0.5 * width / layers.length + 1) * Math.abs(srcNode.y - dstNode.y) / height;
-          let left = srcNode.x - margin;
-          let right = srcNode.x + margin;
+          var y = (srcNode.y + dstNode.y) / 2;
+          var margin = (0.5 * width / layers.length + 1) * Math.abs(srcNode.y - dstNode.y) / height;
+          var left = srcNode.x - margin;
+          var right = srcNode.x + margin;
           if (edges.length % 2 === 0) {
             var step = (right - left) / (edges.length - 1);
           } else {
             var step = (right - left) / edges.length;
           }
           edges.forEach(function (edge, i) {
-            let x = i * step + left;
+            var x = i * step + left;
             edgeAnchors[edge.id] = {x: x, y: y};
           });
         }
@@ -171,23 +171,23 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   function redraw(duration, ease) {
     svg.selectAll('*').remove();
 
-    let graph = buildGraph();
-    let layers = buildLayers(graph);
+    var graph = buildGraph();
+    var layers = buildLayers(graph);
     sortLayers(graph, layers);
     layoutNodes(graph, layers);
-    let anchors = layoutEdges(graph, layers);
+    var anchors = layoutEdges(graph, layers);
 
     if (duration !== undefined && history.length > 0) {
       ease = ease || 'cos';
-      let prevGraph = history.shift();
-      let prevAnchors = history.shift();
+      var prevGraph = history.shift();
+      var prevAnchors = history.shift();
       renderAnimation(prevGraph, graph, prevAnchors, anchors, duration, ease);
     } else {
       render(graph, anchors);
     }
 
-    let saveGraph = {};
-    for (let id in graph) {
+    var saveGraph = {};
+    for (var id in graph) {
       if (graph[id].dummy === undefined) {
         saveGraph[id] = graph[id];
       }
@@ -197,14 +197,14 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function buildDummyNodes(graph1, graph2) {
-    for (let id in graph2) {
+    for (var id in graph2) {
       if (graph1[id] !== undefined) continue;
-      let node = graph2[id];
+      var node = graph2[id];
       // fill graph1[id] with nearest parent
-      let queue = [id];
+      var queue = [id];
       while (queue.length > 0) {
-        let pid = queue.shift();
-        let parent = graph1[pid];
+        var pid = queue.shift();
+        var parent = graph1[pid];
         if (parent !== undefined) {
           graph1[id] = {x: parent.x, y: parent.y, dummy: true};
           break;
@@ -217,17 +217,17 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function render(graph, anchors) {
-    for (let id in edges) {
-      let edge = edges[id];
-      let srcNode = graph[edge.srcId];
-      let dstNode = graph[edge.dstId];
-      let anchor = anchors[id];
+    for (var id in edges) {
+      var edge = edges[id];
+      var srcNode = graph[edge.srcId];
+      var dstNode = graph[edge.dstId];
+      var anchor = anchors[id];
       if (anchor !== undefined) {
         renderEdge([srcNode, anchor, dstNode], edge.data);
       }
     }
 
-    for (let id in graph) {
+    for (var id in graph) {
       renderNode(graph[id], nodes[id]);
     }
   }
@@ -236,40 +236,40 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     buildDummyNodes(prevGraph, graph);
     buildDummyNodes(graph, prevGraph);
 
-    for (let id in anchors) {
-      let edge = edges[id];
-      let path = [graph[edge.srcId], anchors[id], graph[edge.dstId]];
+    for (var id in anchors) {
+      var edge = edges[id];
+      var path = [graph[edge.srcId], anchors[id], graph[edge.dstId]];
 
-      let prevSrcNode = prevGraph[edge.srcId];
-      let prevDstNode = prevGraph[edge.dstId];
+      var prevSrcNode = prevGraph[edge.srcId];
+      var prevDstNode = prevGraph[edge.dstId];
       if (prevSrcNode === undefined || prevDstNode === undefined) {
         renderEdge(path, edge.data);
       } else {
-        let prevAnchor = prevAnchors[id];
+        var prevAnchor = prevAnchors[id];
         if (prevAnchor === undefined) {
           prevAnchor = {x: (prevSrcNode.x + prevDstNode.x) / 2, y: (prevSrcNode.y + prevDstNode.y) / 2};
         }
-        let prevPath = [prevSrcNode, prevAnchor, prevDstNode];
+        var prevPath = [prevSrcNode, prevAnchor, prevDstNode];
         renderEdgeAnimation(prevPath, path, edge.data, duration, ease);
       }
     }
 
     // for vanishing edges
-    for (let id in prevAnchors) {
+    for (var id in prevAnchors) {
       if (anchors[id] !== undefined) continue;
-      let edge = edges[id];
-      let srcNode = graph[edge.srcId];
-      let dstNode = graph[edge.dstId];
+      var edge = edges[id];
+      var srcNode = graph[edge.srcId];
+      var dstNode = graph[edge.dstId];
       if (srcNode === undefined || dstNode === undefined) continue;
-      let anchor = {x: (srcNode.x + dstNode.x) / 2, y: (srcNode.y + dstNode.y) / 2};
-      let path = [srcNode, anchor, dstNode];
-      let prevPath = [prevGraph[edge.srcId], prevAnchors[id], prevGraph[edge.dstId]];
+      var anchor = {x: (srcNode.x + dstNode.x) / 2, y: (srcNode.y + dstNode.y) / 2};
+      var path = [srcNode, anchor, dstNode];
+      var prevPath = [prevGraph[edge.srcId], prevAnchors[id], prevGraph[edge.dstId]];
       renderEdgeAnimation(prevPath, path, edge.data, duration, ease, true);
     }
 
-    for (let id in graph) {
-      let node = graph[id];
-      let prevNode = prevGraph[id];
+    for (var id in graph) {
+      var node = graph[id];
+      var prevNode = prevGraph[id];
 
       if (prevNode !== undefined) {
         renderNodeAnimation(prevNode, node, nodes[id], duration, ease);
@@ -281,16 +281,16 @@ function d3graph (div, width, height, drawNode, drawEdge) {
 
 
   function renderNode(node, data) {
-    let group = svg.append('g')
+    var group = svg.append('g')
     .attr('transform', 'translate(' + node.x + ',' + node.y + ')');
     drawNode(group, data);
   }
 
   function renderNodeAnimation(node1, node2, data, duration, ease) {
-    let group = svg.append('g');
+    var group = svg.append('g');
     group.attr('transform', 'translate(' + node1.x + ',' + node1.y + ')')
     drawNode(group, data);
-    let animation = group.transition().duration(duration).ease(ease)
+    var animation = group.transition().duration(duration).ease(ease)
     .attr('transform', 'translate(' + node2.x + ',' + node2.y + ')');
 
     if (node2.dummy) {
@@ -300,33 +300,33 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     }
   }
 
-  let lineFunc = d3.svg.line()
+  var lineFunc = d3.svg.line()
   .x(function (d) { return d.x; })
   .y(function (d) { return d.y; })
   .interpolate('basis');
 
   function renderEdge(anchors, data) {
-    let mid = anchors[Math.floor(anchors.length / 2)];
-    let path = svg.append('path')
+    var mid = anchors[Math.floor(anchors.length / 2)];
+    var path = svg.append('path')
     .attr('d', lineFunc(anchors)).attr('fill', 'none');
-    let group = svg.append('g')
+    var group = svg.append('g')
     .attr('transform', 'translate(' + mid.x + ',' + mid.y + ')');
     drawEdge(path, group, data);
   }
 
   function renderEdgeAnimation(anchors1, anchors2, data, duration, ease, dummy) {
-    let path = svg.append('path').attr('fill', 'none');
+    var path = svg.append('path').attr('fill', 'none');
     path.attr('d', lineFunc(anchors1));
     path.transition().duration(duration).ease(ease)
     .attr('d', lineFunc(anchors2));
 
-    let mid1 = anchors1[Math.floor(anchors1.length / 2)];
-    let mid2 = anchors2[Math.floor(anchors2.length / 2)];
+    var mid1 = anchors1[Math.floor(anchors1.length / 2)];
+    var mid2 = anchors2[Math.floor(anchors2.length / 2)];
 
-    let group = svg.append('g');
+    var group = svg.append('g');
     group.attr('transform', 'translate(' + mid1.x + ',' + mid1.y + ')');
     drawEdge(path, group, data);
-    let animation = group.transition().duration(duration).ease(ease)
+    var animation = group.transition().duration(duration).ease(ease)
     .attr('transform', 'translate(' + mid2.x + ',' + mid2.y + ')');
     if (dummy) {
       animation.each('end', function () {

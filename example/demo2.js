@@ -1,10 +1,10 @@
 function demo() {
-  let width = 600;
-  let height = 400;
+  var width = 600;
+  var height = 400;
   var graph = d3graph(d3.select('#main'),
     width, height,
     function(group, data) {
-      let size = 5;
+      var size = 5;
       group.append('circle').attr('r', 5).attr('stroke','#AAA').attr('fill', '#FFF');
       group.append('text').text(data);
     },
@@ -14,14 +14,14 @@ function demo() {
     }
   );
 
-  let nodes = [0];
-  let n = 1;
+  var nodes = [0];
+  var n = 1;
   graph.addNode(0, 0);
   function randomUpdate() {
     function addNode() {
-      let r = Math.floor(Math.random() * nodes.length);
-      let id1 = nodes[r];
-      let id2 = (n++) % 100; // reuse nodes
+      var r = Math.floor(Math.random() * nodes.length);
+      var id1 = nodes[r];
+      var id2 = (n++) % 100; // reuse nodes
       graph.addNode(id2, id2);
       if (id1 < id2) {
         // id1+id2 to limit total edges
@@ -32,16 +32,14 @@ function demo() {
       nodes.push(id2);
     }
     function delNode() {
-      if (nodes.length > 10) {
-        let r = Math.floor(Math.random() * nodes.length);
-        graph.delNode(nodes.splice(r, 1));
-      }
+      var r = Math.floor(Math.random() * nodes.length);
+      graph.delNode(nodes.splice(r, 1));
     }
     function addEdge() {
-      let r1 = Math.floor(Math.random() * nodes.length);
-      let r2 = Math.floor(Math.random() * nodes.length);
-      let id1 = nodes[r1];
-      let id2 = nodes[r2];
+      var r1 = Math.floor(Math.random() * nodes.length);
+      var r2 = Math.floor(Math.random() * nodes.length);
+      var id1 = nodes[r1];
+      var id2 = nodes[r2];
       if (id1 < id2) {
         graph.addEdge(id1 + id2, id1, id2);
       } else if (id2 < id1) {
@@ -49,9 +47,18 @@ function demo() {
       }
     }
 
-    delNode();
-    addNode();
-    addEdge();
+    var r = Math.floor(Math.random() * 3);
+    if (r === 0) {
+      addNode();
+    } else if (r === 1) {
+      if (nodes.length > 10) {
+        delNode();
+      } else {
+        addNode();
+      }
+    } else if (r === 2) {
+      addEdge();
+    }
     graph.redraw(1000);
   }
 
