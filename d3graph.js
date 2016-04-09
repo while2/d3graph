@@ -162,6 +162,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     return edgeAnchors;
   }
 
+  var playing = false;
   function redraw(duration, ease) {
     var graph = buildGraph();
     var layers = buildLayers(graph);
@@ -173,6 +174,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
       // render current state and clear history
       render(graph, anchors);
       history = [graph, anchors];
+      playing = false;
       return;
     }
 
@@ -183,7 +185,6 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     play();
   }
 
-  var playing = false;
   function play() {
     if (!playing && history.length > 2) {
       playing = true;
