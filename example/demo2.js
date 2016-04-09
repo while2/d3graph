@@ -1,10 +1,9 @@
 function demo() {
-  var width = 600;
-  var height = 400;
-  var graph = d3graph(d3.select('#main'),
+  const width = 600;
+  const height = 400;
+  const graph = d3graph(d3.select('#main'),
     width, height,
     function(group, data) {
-      var size = 5;
       group.append('circle').attr('r', 5).attr('stroke','#AAA').attr('fill', '#FFF');
       group.append('text').text(data);
     },
@@ -17,6 +16,8 @@ function demo() {
   var nodes = [0];
   var n = 1;
   graph.addNode(0, 0);
+  graph.redraw();
+
   function randomUpdate() {
     function addNode() {
       var r = Math.floor(Math.random() * nodes.length);
@@ -47,17 +48,17 @@ function demo() {
       }
     }
 
-    var r = Math.floor(Math.random() * 3);
-    if (r === 0) {
+    if (nodes.length < 10) {
       addNode();
-    } else if (r === 1) {
-      if (nodes.length > 10) {
-        delNode();
-      } else {
+    } else {
+      var r = Math.floor(Math.random() * 3);
+      if (r === 0) {
         addNode();
+      } else if (r === 1) {
+        delNode();
+      } else if (r === 2) {
+        addEdge();
       }
-    } else if (r === 2) {
-      addEdge();
     }
     graph.redraw(1000);
   }
