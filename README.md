@@ -4,11 +4,13 @@ d3graph is a javascript graph visualization tool base on d3.js.
 
 ![A simple example](./example/demo.gif)
 
-1. For DAG (Directed Acyclic Graph) only.
-2. Automatically layout nodes and edges.
-3. Remember last layout and visualize the transition of graph with animation.
+d3graph
 
-> An undirected graph can also be converted to a DAG, by assigning each node with a particular order.
+- Is only for DAG (Directed Acyclic Graph).
+- Automatically layout nodes and edges.
+- Remember history layouts and visualize the transition of graph with animation.
+
+> To visualize an undirected graph, one can define a particular order for each node and convert it into a DAG.
 
 ## Usage
 
