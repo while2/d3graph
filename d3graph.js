@@ -37,42 +37,36 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function buildLayers(graph) {
-    var queue = [];
+    var layer = [];
     // first layer has no src
     for (var id in graph) {
       if (graph[id].src.length === 0) {
-        queue.push(id);
+        graph[id].level = 0;
+        layer.push(id);
       }
     }
-    queue.push(undefined);
 
-    var level = 0;
-    while (true) {
-      var id = queue.shift();
-      if (id === undefined) {
-        if (queue.length === 0) break;
-        level++;
-        queue.push(undefined);
-        continue;
-      }
-
-      var node = graph[id];
-      if (node.level === undefined) {
-        node.level = level;
-        node.dst.forEach(function (edge) {
-          queue.push(edge.dstId);
+    var layers = [layer];
+    for (var l = 1; layer.length > 0; l++) {
+      layer = layer.map(function (id) {
+        return graph[id].dst.map(function (edge) {
+          return edge.dstId;
         });
+      })
+      .reduce(function (set1, set2) {
+        set2.forEach(function (id) {
+          if (graph[id].level === undefined) {
+            graph[id].level = l;
+            set1.push(id);
+          }
+        })
+        return set1;
+      }, []);
+      if (layer.length > 0) {
+        layers.push(layer);
       }
     }
 
-    var layers = [];
-    for (var id in graph) {
-      var node = graph[id];
-      if (layers[node.level] === undefined) {
-        layers[node.level] = [];
-      }
-      layers[node.level].push(id);
-    }
     return layers;
   }
 
