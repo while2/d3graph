@@ -47,23 +47,17 @@ The following script visualized as the above picture.
 ```javascript
 const width = 800;
 const height = 600;
-var graph = d3graph(d3.select('#main'), // draw graph on the selected 'main' div
+const graph = d3graph(d3.select('#main'), // draw graph on the selected 'main' div
   width, height,
   function(group, data) { // drawNode function
-    group.append('circle')
-    .attr('r', data.size || 5)
-    .attr('stroke','#000')
-    .attr('fill', data.color || '#FFF');
-
-    group.append('text')
-    .text(data.text);
+    group.append('circle').attr('r', data.size).attr('stroke','#000').attr('fill', data.color);
+    group.append('text').text(data.text);
   },
-  function(path, group, data) {
-    // decorate path
-    path.attr('stroke','#000')
-    .attr('stroke-dasharray', data.dash || 'none');
-
-    // draw something on the anchor
+  function(path, group, data) { // drawEdge function
+    path.attr('stroke','#000');
+    if (data.dash) {
+      path.attr('stroke-dasharray', data.dash);
+    }
     group.append('text').text(data.text);
   }
 );
@@ -73,16 +67,13 @@ graph.addNode('b', {text: 'b', size: 7, color: '#AFF'});
 graph.addEdge('a-b', 'a', 'b', {text: 'a-b'});
 graph.redraw();
 
-
 graph.addNode('c', {text: 'c', size: 3, color: '#FAA'});
 graph.addEdge('a-c', 'a', 'c', {dash: [2,2]});
 graph.redraw(500);
 
-setTimeout(function() {
-  graph.addEdge('a-c-2', 'a', 'c', {});
-  graph.addEdge('b-c', 'b', 'c', {});
-  graph.redraw(500);
-}, 1500);
+graph.addEdge('a-c-2', 'a', 'c', {});
+graph.addEdge('b-c', 'b', 'c', {});
+graph.redraw(500);
 ```
 
 ## Layout
@@ -93,4 +84,4 @@ Note that some edge may connect nodes with the same level, since the level is de
 
 ## Notes
 
-`delNode` deletes only the nodes, not their adjacent edges. Although these edges will not be visible 
+`delNode` deletes only the nodes, not their adjacent edges. Although these edges will not be visible

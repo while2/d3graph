@@ -163,31 +163,45 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function redraw(duration, ease) {
-    svg.selectAll('*').remove();
-
     var graph = buildGraph();
     var layers = buildLayers(graph);
     sortLayers(graph, layers);
     layoutNodes(graph, layers);
     var anchors = layoutEdges(graph, layers);
 
-    if (duration !== undefined && history.length > 0) {
-      ease = ease || 'cos';
-      var prevGraph = history.shift();
-      var prevAnchors = history.shift();
-      renderAnimation(prevGraph, graph, prevAnchors, anchors, duration, ease);
-    } else {
+    if (duration === undefined || history.length === 0) {
+      // render current state and clear history
       render(graph, anchors);
+      history = [graph, anchors];
+      return;
     }
 
-    var saveGraph = {};
-    for (var id in graph) {
-      if (graph[id].dummy === undefined) {
-        saveGraph[id] = graph[id];
-      }
-    }
-    history.push(saveGraph);
+    history.push(duration);
+    history.push(ease || 'cos');
+    history.push(graph);
     history.push(anchors);
+    play();
+  }
+
+  var playing = false;
+  function play() {
+    if (!playing && history.length > 2) {
+      playing = true;
+      [prevGraph, prevAnchors, duration, ease] = history.splice(0, 4);
+      [graph, anchors] = history.slice(0, 2);
+
+      // copy graph so the origin one would not contain dummy nodes
+      var copyGraph = {};
+      for (var id in graph) {
+        copyGraph[id] = graph[id];
+      }
+
+      renderAnimation(prevGraph, copyGraph, prevAnchors, anchors, duration, ease);
+      setTimeout(function() {
+        playing = false;
+        play();
+      }, duration);
+    }
   }
 
   function buildDummyNodes(graph1, graph2) {
@@ -211,6 +225,8 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function render(graph, anchors) {
+    svg.selectAll('*').remove();
+
     for (var id in edges) {
       var edge = edges[id];
       var srcNode = graph[edge.srcId];
@@ -227,6 +243,8 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   }
 
   function renderAnimation(prevGraph, graph, prevAnchors, anchors, duration, ease) {
+    svg.selectAll('*').remove();
+
     buildDummyNodes(prevGraph, graph);
     buildDummyNodes(graph, prevGraph);
 
