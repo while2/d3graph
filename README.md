@@ -2,17 +2,13 @@
 
 d3graph is a javascript graph visualization tool base on d3.js.
 
+![A simple example](./example/demo.gif)
+
 1. For DAG (Directed Acyclic Graph) only.
 2. Automatically layout nodes and edges.
 3. Remember last layout and visualize the transition of graph with animation.
 
 > An undirected graph can also be converted to a DAG, by assigning each node with a particular order.
-
-A simple example with code [here](#example).
-
-![](./example/demo.gif)
-
-A random growing graph [Demo](http://yihe2.github.io/d3graph).
 
 ## Usage
 
@@ -42,7 +38,7 @@ d3graph will automatically resolve the layout of nodes and edges. For each node,
 
 ## Example
 
-The following script visualized as the above picture.
+Following script generates the above [animation](#d3graph).
 
 ```javascript
 const width = 800;
@@ -76,12 +72,14 @@ graph.addEdge('b-c', 'b', 'c', {});
 graph.redraw(500);
 ```
 
+A random growing graph [example](http://yihe2.github.io/d3graph).
+
 ## Layout
 
-First of all the nodes are topologically sorted and group by their level. Nodes with the same level share the same x-coordinates and group of nodes scatter from left to right uniformly. Then an order was optimized in each group to reduce edge intersections.
+First of all the nodes are topologically sorted and group by their level. Nodes with the same level share the same x-coordinates and group of nodes scatter from left to right uniformly. Then an order was optimized within each group to reduce the edge intersection.
 
-Note that some edge may connect nodes with the same level, since the level is defined only by the distance from the initial nodes. Good news is that in such a way, no edge will spread over more than 2 levels.
+Note that some edges may connect nodes with the same level, since the level is defined only by the distance from the initial nodes. Good news is that in such a way, no edge will spread over more than 2 levels.
 
 ## Notes
 
-`delNode` deletes only the nodes, not their adjacent edges. Although these edges will not be visible
+Notice that `delNode` deletes only the nodes, not their adjacent edges. These ghost edges will not be represented, until their adjacent nodes were added back to the graph.
