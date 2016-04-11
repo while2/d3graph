@@ -261,9 +261,12 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         var prevAnchor = prevAnchors[id];
         if (prevAnchor === undefined) {
           prevAnchor = {x: (prevSrcNode.x + prevDstNode.x) / 2, y: (prevSrcNode.y + prevDstNode.y) / 2};
+          var prevPath = [prevSrcNode, prevAnchor, prevDstNode];
+          renderEdgeAnimation(prevPath, path, 0, 1, edge.data, duration, ease);
+        } else {
+          var prevPath = [prevSrcNode, prevAnchor, prevDstNode];
+          renderEdgeAnimation(prevPath, path, 1, 1, edge.data, duration, ease);
         }
-        var prevPath = [prevSrcNode, prevAnchor, prevDstNode];
-        renderEdgeAnimation(prevPath, path, edge.data, duration, ease);
       }
     }
 
@@ -277,7 +280,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
       var anchor = {x: (srcNode.x + dstNode.x) / 2, y: (srcNode.y + dstNode.y) / 2};
       var path = [srcNode, anchor, dstNode];
       var prevPath = [prevGraph[edge.srcId], prevAnchors[id], prevGraph[edge.dstId]];
-      renderEdgeAnimation(prevPath, path, edge.data, duration, ease, true);
+      renderEdgeAnimation(prevPath, path, 1, 0, edge.data, duration, ease, true);
     }
 
     for (var id in graph) {
@@ -285,9 +288,12 @@ function d3graph (div, width, height, drawNode, drawEdge) {
       var prevNode = prevGraph[id];
 
       if (prevNode !== undefined) {
-        renderNodeAnimation(prevNode, node, nodes[id], duration, ease);
+        const prevOpacity = prevNode.dummy ? 0 : 1;
+        const opacity = node.dummy ? 0 : 1;
+        renderNodeAnimation(prevNode, node, prevOpacity, opacity, nodes[id], duration, ease);
       } else {
-        renderNode(node, nodes[id]);
+        renderNodeAnimation(node, node, 0, 1, duration, ease);
+        //renderNode(node, nodes[id]);
       }
     }
   }
@@ -299,12 +305,14 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     drawNode(group, data);
   }
 
-  function renderNodeAnimation(node1, node2, data, duration, ease) {
+  function renderNodeAnimation(node1, node2, prevOpacity, opacity, data, duration, ease) {
     var group = svg.append('g');
-    group.attr('transform', 'translate(' + node1.x + ',' + node1.y + ')')
+    group.attr('transform', 'translate(' + node1.x + ',' + node1.y + ')');
+    group.attr('opacity', prevOpacity);
     drawNode(group, data);
     var animation = group.transition().duration(duration).ease(ease)
-    .attr('transform', 'translate(' + node2.x + ',' + node2.y + ')');
+    .attr('transform', 'translate(' + node2.x + ',' + node2.y + ')')
+    .attr('opacity', opacity);
 
     if (node2.dummy) {
       animation.each('end', function () {
@@ -327,20 +335,24 @@ function d3graph (div, width, height, drawNode, drawEdge) {
     drawEdge(path, group, data);
   }
 
-  function renderEdgeAnimation(anchors1, anchors2, data, duration, ease, dummy) {
+  function renderEdgeAnimation(anchors1, anchors2, prevOpacity, opacity, data, duration, ease, dummy) {
     var path = svg.append('path').attr('fill', 'none');
     path.attr('d', lineFunc(anchors1));
+    path.attr('opacity', prevOpacity);
     path.transition().duration(duration).ease(ease)
-    .attr('d', lineFunc(anchors2));
+    .attr('d', lineFunc(anchors2))
+    .attr('opacity', opacity);
 
     var mid1 = anchors1[Math.floor(anchors1.length / 2)];
     var mid2 = anchors2[Math.floor(anchors2.length / 2)];
 
     var group = svg.append('g');
     group.attr('transform', 'translate(' + mid1.x + ',' + mid1.y + ')');
+    group.attr('opacity', prevOpacity);
     drawEdge(path, group, data);
     var animation = group.transition().duration(duration).ease(ease)
-    .attr('transform', 'translate(' + mid2.x + ',' + mid2.y + ')');
+    .attr('transform', 'translate(' + mid2.x + ',' + mid2.y + ')')
+    .attr('opacity', opacity);
     if (dummy) {
       animation.each('end', function () {
         path.remove();
