@@ -188,6 +188,8 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   function play() {
     if (!playing && history.length > 2) {
       playing = true;
+      
+      var prevGraph, prevAnchors, duration, ease, graph, anchors;
       [prevGraph, prevAnchors, duration, ease] = history.splice(0, 4);
       [graph, anchors] = history.slice(0, 2);
 
