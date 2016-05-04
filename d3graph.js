@@ -3,30 +3,41 @@ function d3graph (svg, width, height, drawNode, drawEdge) {
 
   var nodes = {};
   var edges = {};
+
+  var deletedNodes = {};
+  var deletedEdges = {};
   var history = [];
 
   function addNode(id, data) {
+    if (nodes[id]) {
+      deletedNodes[id] = false;
+    }
     nodes[id] = data || id;
   }
   function delNode(nodeId) {
-    nodes[nodeId] = undefined;
+    // nodes should not be deleted directly since it might be used for animation
+    deletedNodes[nodeId] = true;
   }
   function addEdge(edgeId, srcId, dstId, data) {
+    if (edges[edgeId]) {
+      deletedEdges[edgeId] = false;
+    }
     edges[edgeId] = {id: edgeId, srcId: srcId, dstId: dstId, data: data};
   }
   function delEdge(edgeId) {
-    edges[edgeId] = undefined;
+    deletedEdges[edgeId] = true;
   }
 
   function buildGraph() {
     var graph = {};
     for (var id in nodes) {
-      if (nodes[id] !== undefined) {
+      if (!deletedNodes[id]) {
         graph[id] = {src:[], dst: []};
       }
     }
     for (var eid in edges) {
       var edge = edges[eid];
+      if (deletedEdges[eid]) continue;
       if (graph[edge.srcId] !== undefined && graph[edge.dstId] != undefined) {
         graph[edge.srcId].dst.push(edge);
         graph[edge.dstId].src.push(edge);
@@ -230,6 +241,7 @@ function d3graph (svg, width, height, drawNode, drawEdge) {
     svg.selectAll('*').remove();
 
     for (var id in edges) {
+      if (deletedEdges[id]) continue;
       var edge = edges[id];
       var srcNode = graph[edge.srcId];
       var dstNode = graph[edge.dstId];
@@ -303,14 +315,14 @@ function d3graph (svg, width, height, drawNode, drawEdge) {
   function renderNode(node, data) {
     var group = svg.append('g')
     .attr('transform', 'translate(' + node.x + ',' + node.y + ')');
-    drawNode(group, data);
+    drawNode(group, data, node.x, node.y);
   }
 
   function renderNodeAnimation(node1, node2, prevOpacity, opacity, data, duration, ease) {
     var group = svg.append('g');
     group.attr('transform', 'translate(' + node1.x + ',' + node1.y + ')');
     group.attr('opacity', prevOpacity);
-    drawNode(group, data);
+    drawNode(group, data, node2.x, node2.y);
     var animation = group.transition().duration(duration).ease(ease)
     .attr('transform', 'translate(' + node2.x + ',' + node2.y + ')')
     .attr('opacity', opacity);
@@ -367,8 +379,6 @@ function d3graph (svg, width, height, drawNode, drawEdge) {
     delNode: delNode,
     addEdge: addEdge,
     delEdge: delEdge,
-    redraw: redraw,
-    nodes: nodes,
-    edges: edges
+    redraw: redraw
   };
 }
