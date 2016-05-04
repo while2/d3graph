@@ -9,9 +9,7 @@ function d3graph (svg, width, height, drawNode, drawEdge) {
   var history = [];
 
   function addNode(id, data) {
-    if (nodes[id]) {
-      deletedNodes[id] = false;
-    }
+    deletedNodes[id] = false;
     nodes[id] = data || id;
   }
   function delNode(nodeId) {
@@ -19,9 +17,7 @@ function d3graph (svg, width, height, drawNode, drawEdge) {
     deletedNodes[nodeId] = true;
   }
   function addEdge(edgeId, srcId, dstId, data) {
-    if (edges[edgeId]) {
-      deletedEdges[edgeId] = false;
-    }
+    deletedEdges[edgeId] = false;
     edges[edgeId] = {id: edgeId, srcId: srcId, dstId: dstId, data: data};
   }
   function delEdge(edgeId) {
