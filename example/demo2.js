@@ -1,7 +1,7 @@
 function demo() {
   const width = 600;
   const height = 400;
-  const graph = d3graph(d3.select('#main'),
+  const graph = d3graph(d3.select('#main').append('svg'),
     width, height,
     function(group, data) {
       group.append('circle').attr('r', 5).attr('stroke','#AAA').attr('fill', '#FFF');

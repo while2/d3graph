@@ -1,6 +1,5 @@
-function d3graph (div, width, height, drawNode, drawEdge) {
-  var svg = div.append('svg')
-  .attr('width', width).attr('height', height);
+function d3graph (svg, width, height, drawNode, drawEdge) {
+  svg.attr('width', width).attr('height', height);
 
   var nodes = {};
   var edges = {};
@@ -188,7 +187,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
   function play() {
     if (!playing && history.length > 2) {
       playing = true;
-      
+
       var prevGraph, prevAnchors, duration, ease, graph, anchors;
       [prevGraph, prevAnchors, duration, ease] = history.splice(0, 4);
       [graph, anchors] = history.slice(0, 2);
@@ -294,7 +293,7 @@ function d3graph (div, width, height, drawNode, drawEdge) {
         const opacity = node.dummy ? 0 : 1;
         renderNodeAnimation(prevNode, node, prevOpacity, opacity, nodes[id], duration, ease);
       } else {
-        renderNodeAnimation(node, node, 0, 1, duration, ease);
+        renderNodeAnimation(node, node, 0, 1, nodes[id], duration, ease);
         //renderNode(node, nodes[id]);
       }
     }
